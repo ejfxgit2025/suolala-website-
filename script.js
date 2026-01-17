@@ -1,4 +1,4 @@
-     // DOM Elements
+   // DOM Elements
 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
 const mobileMenuClose = document.getElementById('mobileMenuClose');
@@ -20,6 +20,7 @@ const songTitle = document.querySelector('.song-title');
 
 // Music Player State
 let isPlaying = false;
+let audioInitialized = false;
 
 // Mobile Menu Toggle
 mobileMenuBtn.addEventListener('click', () => {
@@ -366,13 +367,18 @@ function setupScrollAnimations() {
     elementsToAnimate.forEach(el => observer.observe(el));
 }
 
-// Music Player Functionality
+// Music Player Functionality - FIXED VERSION
 function initializeMusicPlayer() {
     // Check if audio element exists
-    if (!suolalaAudio) return;
+    if (!suolalaAudio) {
+        console.error("Audio element not found");
+        return;
+    }
     
     // Set initial volume
-    suolalaAudio.volume = volumeSlider.value / 100;
+    if (volumeSlider) {
+        suolalaAudio.volume = volumeSlider.value / 100;
+    }
     
     // Load song metadata
     suolalaAudio.addEventListener('loadedmetadata', function() {
@@ -380,13 +386,15 @@ function initializeMusicPlayer() {
             const duration = suolalaAudio.duration;
             const minutes = Math.floor(duration / 60);
             const seconds = Math.floor(duration % 60);
-            songTitle.textContent = `SUOLALA Theme (${minutes}:${seconds.toString().padStart(2, '0')})`;
+            if (songTitle) {
+                songTitle.textContent = `SUOLALA Theme (${minutes}:${seconds.toString().padStart(2, '0')})`;
+            }
         }
     });
     
     // Update progress bar
     suolalaAudio.addEventListener('timeupdate', function() {
-        if (suolalaAudio.duration && !isNaN(suolalaAudio.duration)) {
+        if (suolalaAudio.duration && !isNaN(suolalaAudio.duration) && progressBar) {
             const progress = (suolalaAudio.currentTime / suolalaAudio.duration) * 100;
             progressBar.style.width = `${progress}%`;
         }
@@ -406,34 +414,62 @@ function initializeMusicPlayer() {
     // Handle audio errors
     suolalaAudio.addEventListener('error', function(e) {
         console.error("Audio error:", e);
-        songTitle.textContent = "Error loading audio";
-        musicToggle.disabled = true;
-        musicToggle.style.opacity = "0.5";
+        if (songTitle) {
+            songTitle.textContent = "Add suolalasong.mp3";
+            songTitle.style.color = "var(--warning)";
+        }
+        if (musicToggle) {
+            musicToggle.disabled = true;
+            musicToggle.style.opacity = "0.5";
+        }
     });
+    
+    // Update button when audio starts playing
+    suolalaAudio.addEventListener('play', function() {
+        isPlaying = true;
+        updateMusicButton();
+    });
+    
+    // Update button when audio pauses
+    suolalaAudio.addEventListener('pause', function() {
+        isPlaying = false;
+        updateMusicButton();
+    });
+    
+    // Initial button state
+    updateMusicButton();
 }
 
-// Toggle play/pause
+// Toggle play/pause - FIXED VERSION
 function toggleMusic() {
+    if (!suolalaAudio) return;
+    
+    console.log("Toggle music called, current state:", isPlaying);
+    
     if (isPlaying) {
+        console.log("Pausing audio...");
         suolalaAudio.pause();
-        isPlaying = false;
+        // The 'pause' event will update isPlaying and the button
     } else {
+        console.log("Playing audio...");
         suolalaAudio.play().then(() => {
-            isPlaying = true;
+            console.log("Audio play successful");
+            // The 'play' event will update isPlaying and the button
         }).catch(e => {
             console.log("Audio play failed:", e);
             // Show user they need to interact first on some browsers
-            musicToggle.style.animation = 'shake 0.5s ease';
-            setTimeout(() => {
-                musicToggle.style.animation = '';
-            }, 500);
+            if (musicToggle) {
+                musicToggle.style.animation = 'shake 0.5s ease';
+                setTimeout(() => {
+                    musicToggle.style.animation = '';
+                }, 500);
+            }
             
-            // Try to play on next user interaction for browsers that require it
+            // For browsers that require user interaction
             const playOnInteraction = () => {
                 suolalaAudio.play().then(() => {
-                    isPlaying = true;
-                    updateMusicButton();
-                }).catch(err => console.log("Still failed:", err));
+                    console.log("Audio play successful after interaction");
+                }).catch(err => console.log("Still failed after interaction:", err));
                 document.removeEventListener('click', playOnInteraction);
                 document.removeEventListener('touchstart', playOnInteraction);
             };
@@ -442,43 +478,44 @@ function toggleMusic() {
             document.addEventListener('touchstart', playOnInteraction, { once: true });
         });
     }
-    updateMusicButton();
 }
 
+// Update music button - FIXED VERSION
 function updateMusicButton() {
-    if (!musicIcon) return;
+    console.log("Updating music button, isPlaying:", isPlaying);
     
+    if (!musicIcon || !musicPlayer) return;
+    
+    // Update icon
+    musicIcon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
+    
+    // Update player class for animation
     if (isPlaying) {
-        musicIcon.className = 'fas fa-pause';
         musicPlayer.classList.add('playing');
     } else {
-        musicIcon.className = 'fas fa-play';
         musicPlayer.classList.remove('playing');
     }
+    
+    console.log("Button icon set to:", musicIcon.className);
 }
 
-// Add shake animation for audio play error
-const shakeStyle = document.createElement('style');
-shakeStyle.textContent = `
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-    20%, 40%, 60%, 80% { transform: translateX(5px); }
-}
-`;
-document.head.appendChild(shakeStyle);
-
-// Mobile-friendly: Initialize audio on first user interaction
-let audioInitialized = false;
-
+// Initialize audio on first user interaction
 function initAudioOnInteraction() {
     if (!audioInitialized && suolalaAudio) {
-        // Just ensure audio context is ready
         console.log("Audio context initialized");
         audioInitialized = true;
         
-        // Try to load and play if user wants autoplay
+        // On mobile, we'll load the audio but not autoplay
         suolalaAudio.load();
+        
+        // Show a subtle hint to user on mobile
+        if (window.innerWidth <= 768 && songTitle) {
+            const originalText = songTitle.textContent;
+            songTitle.textContent = "Tap to play music";
+            setTimeout(() => {
+                songTitle.textContent = originalText;
+            }, 2000);
+        }
     }
 }
 
@@ -495,11 +532,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize music player
     if (suolalaAudio && musicToggle && volumeSlider) {
+        console.log("Initializing music player...");
         initializeMusicPlayer();
         
         // Set up event listeners for music player
         musicToggle.addEventListener('click', function(e) {
+            e.preventDefault();
             e.stopPropagation();
+            console.log("Music toggle clicked");
             toggleMusic();
         });
         
@@ -513,20 +553,39 @@ document.addEventListener('DOMContentLoaded', () => {
         // Click on music player to toggle (except volume slider)
         if (musicPlayer) {
             musicPlayer.addEventListener('click', function(e) {
-                if (e.target !== volumeSlider && !volumeSlider.contains(e.target)) {
+                if (e.target !== volumeSlider && !volumeSlider.contains(e.target) && e.target !== musicToggle) {
+                    e.preventDefault();
+                    console.log("Music player clicked");
                     toggleMusic();
                 }
             });
             
-            // Touch events for mobile
+            // Touch events for mobile - prevent scrolling when interacting with player
             musicPlayer.addEventListener('touchstart', function(e) {
                 e.stopPropagation();
             }, { passive: true });
+            
+            // Prevent context menu on long press for mobile
+            musicPlayer.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                return false;
+            });
         }
         
         // Initialize audio on first user interaction
         document.addEventListener('click', initAudioOnInteraction, { once: true });
         document.addEventListener('touchstart', initAudioOnInteraction, { once: true });
+        
+        // Also initialize if user interacts with any button
+        document.querySelectorAll('button, a').forEach(element => {
+            element.addEventListener('click', initAudioOnInteraction, { once: true });
+        });
+    } else {
+        console.error("Music player elements not found:", {
+            audio: !!suolalaAudio,
+            toggle: !!musicToggle,
+            slider: !!volumeSlider
+        });
     }
     
     // Start price updates
@@ -544,12 +603,14 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("SUOLALA song is ready to play");
         });
         
-        suolalaAudio.addEventListener('error', () => {
-            console.log("Make sure 'suolalasong.mp3' is in the same directory as your HTML file");
-            if (songTitle) {
+        // Set a timeout to check if audio loaded
+        setTimeout(() => {
+            if (suolalaAudio.readyState < 2 && songTitle) { // 2 = HAVE_CURRENT_DATA
+                console.log("Audio file may be missing or inaccessible");
                 songTitle.textContent = "Add suolalasong.mp3";
+                songTitle.style.color = "var(--warning)";
             }
-        });
+        }, 3000);
     }
 });
 
@@ -570,7 +631,7 @@ const themeToggleCSS = `
     align-items: center;
     justify-content: center;
     font-size: 1.2rem;
-    z-index: 1000;
+    z-index: 1001;
     box-shadow: 0 5px 20px rgba(153, 69, 255, 0.4);
     transition: all 0.3s ease;
 }
@@ -582,11 +643,11 @@ const themeToggleCSS = `
 
 @media (max-width: 768px) {
     .theme-toggle {
-        bottom: 90px;
-        right: 20px;
-        width: 45px;
-        height: 45px;
-        font-size: 1.1rem;
+        bottom: 80px;
+        right: 15px;
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
     }
 }
 
@@ -627,6 +688,13 @@ const themeToggleCSS = `
 /* Negative price change */
 .price-change.negative {
     color: var(--warning);
+}
+
+/* Shake animation for audio errors */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
 }
 `;
 
