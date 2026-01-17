@@ -1,4 +1,4 @@
- /* Reset & Base Styles */
+   /* Reset & Base Styles */
 * {
     margin: 0;
     padding: 0;
@@ -1039,7 +1039,7 @@ h1, h2, h3, h4, h5, h6 {
     backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
     border-radius: 50px;
-    padding: 10px 20px;
+    padding: 12px 20px;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -1083,7 +1083,7 @@ h1, h2, h3, h4, h5, h6 {
 .song-title {
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
@@ -1098,12 +1098,12 @@ h1, h2, h3, h4, h5, h6 {
 
 .volume-control i {
     color: var(--text-secondary);
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     flex-shrink: 0;
 }
 
 .volume-slider {
-    width: 70px;
+    width: 80px;
     height: 4px;
     -webkit-appearance: none;
     background: rgba(255, 255, 255, 0.1);
@@ -1312,49 +1312,52 @@ body[data-theme="light"] .music-progress {
         padding: 20px;
     }
     
-    /* Mobile Music Player - 1/3 size */
+    /* Mobile Music Player - Same appearance, shorter length */
     .music-player {
-        width: 120px; /* 1/3 of typical mobile width */
-        max-width: 120px;
-        height: 40px;
-        padding: 5px 8px;
-        border-radius: 25px;
-        gap: 5px;
+        width: 280px; /* Slightly shorter for mobile */
+        max-width: 280px;
+        padding: 10px 15px;
         left: 15px;
         bottom: 20px;
+        gap: 10px;
     }
     
     .music-toggle {
-        width: 25px;
-        height: 25px;
-        font-size: 0.7rem;
+        width: 36px;
+        height: 36px;
+        font-size: 0.9rem;
     }
     
-    .music-info {
-        display: none; /* Hide song info on mobile to save space */
+    .song-title {
+        font-size: 0.85rem;
     }
     
-    .volume-control {
-        display: none; /* Hide volume control on mobile */
+    .volume-slider {
+        width: 70px;
+        height: 3px;
     }
     
-    .music-progress {
-        display: none; /* Hide progress bar on mobile */
+    .volume-slider::-webkit-slider-thumb {
+        width: 10px;
+        height: 10px;
     }
     
-    /* Show only the play button on mobile */
-    .music-player {
-        justify-content: center;
-        padding: 5px;
+    .volume-slider::-moz-range-thumb {
+        width: 10px;
+        height: 10px;
+    }
+    
+    .volume-control i {
+        font-size: 0.75rem;
     }
     
     /* Adjust theme toggle position */
     .theme-toggle {
         bottom: 20px;
         right: 15px;
-        width: 40px;
-        height: 40px;
-        font-size: 1rem;
+        width: 45px;
+        height: 45px;
+        font-size: 1.1rem;
     }
 }
 
@@ -1387,51 +1390,76 @@ body[data-theme="light"] .music-progress {
         font-size: 1rem;
     }
     
-    /* Small screen Music Player */
+    /* Smaller screens - Keep all elements but adjust size */
     .music-player {
-        width: 100px;
-        max-width: 100px;
-        height: 35px;
+        width: 260px;
+        max-width: 260px;
+        padding: 8px 12px;
         left: 10px;
         bottom: 15px;
+        gap: 8px;
     }
     
     .music-toggle {
-        width: 22px;
-        height: 22px;
-        font-size: 0.6rem;
+        width: 32px;
+        height: 32px;
+        font-size: 0.8rem;
+    }
+    
+    .song-title {
+        font-size: 0.8rem;
+    }
+    
+    .volume-slider {
+        width: 60px;
+    }
+    
+    .volume-control i {
+        font-size: 0.7rem;
     }
     
     .theme-toggle {
         bottom: 15px;
         right: 10px;
-        width: 35px;
-        height: 35px;
-        font-size: 0.9rem;
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
     }
 }
 
 /* Extra small screens */
 @media (max-width: 320px) {
     .music-player {
-        width: 90px;
-        max-width: 90px;
-        height: 32px;
+        width: 240px;
+        max-width: 240px;
+        padding: 6px 10px;
         left: 8px;
         bottom: 10px;
     }
     
     .music-toggle {
-        width: 20px;
-        height: 20px;
-        font-size: 0.55rem;
+        width: 28px;
+        height: 28px;
+        font-size: 0.7rem;
+    }
+    
+    .song-title {
+        font-size: 0.75rem;
+    }
+    
+    .volume-slider {
+        width: 50px;
+    }
+    
+    .volume-control i {
+        font-size: 0.65rem;
     }
     
     .theme-toggle {
         bottom: 10px;
         right: 8px;
-        width: 32px;
-        height: 32px;
-        font-size: 0.8rem;
+        width: 35px;
+        height: 35px;
+        font-size: 0.9rem;
     }
 }
