@@ -1,4 +1,4 @@
-// DOM Elements
+     // DOM Elements
 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
 const mobileMenuClose = document.getElementById('mobileMenuClose');
@@ -8,6 +8,18 @@ const livePriceElement = document.getElementById('livePrice');
 const priceChangeElement = document.getElementById('priceChange');
 const particlesContainer = document.querySelector('.particles-container');
 const floatingShapes = document.querySelector('.floating-shapes');
+
+// Music Player Elements
+const suolalaAudio = document.getElementById('suolalaAudio');
+const musicToggle = document.getElementById('musicToggle');
+const musicIcon = document.getElementById('musicIcon');
+const volumeSlider = document.getElementById('volumeSlider');
+const progressBar = document.getElementById('progressBar');
+const musicPlayer = document.querySelector('.music-player');
+const songTitle = document.querySelector('.song-title');
+
+// Music Player State
+let isPlaying = false;
 
 // Mobile Menu Toggle
 mobileMenuBtn.addEventListener('click', () => {
@@ -354,6 +366,122 @@ function setupScrollAnimations() {
     elementsToAnimate.forEach(el => observer.observe(el));
 }
 
+// Music Player Functionality
+function initializeMusicPlayer() {
+    // Check if audio element exists
+    if (!suolalaAudio) return;
+    
+    // Set initial volume
+    suolalaAudio.volume = volumeSlider.value / 100;
+    
+    // Load song metadata
+    suolalaAudio.addEventListener('loadedmetadata', function() {
+        if (suolalaAudio.duration && !isNaN(suolalaAudio.duration)) {
+            const duration = suolalaAudio.duration;
+            const minutes = Math.floor(duration / 60);
+            const seconds = Math.floor(duration % 60);
+            songTitle.textContent = `SUOLALA Theme (${minutes}:${seconds.toString().padStart(2, '0')})`;
+        }
+    });
+    
+    // Update progress bar
+    suolalaAudio.addEventListener('timeupdate', function() {
+        if (suolalaAudio.duration && !isNaN(suolalaAudio.duration)) {
+            const progress = (suolalaAudio.currentTime / suolalaAudio.duration) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+    });
+    
+    // Handle song end (restart for loop)
+    suolalaAudio.addEventListener('ended', function() {
+        if (suolalaAudio.loop) {
+            suolalaAudio.currentTime = 0;
+            suolalaAudio.play().catch(e => console.log("Auto-restart failed:", e));
+        } else {
+            isPlaying = false;
+            updateMusicButton();
+        }
+    });
+    
+    // Handle audio errors
+    suolalaAudio.addEventListener('error', function(e) {
+        console.error("Audio error:", e);
+        songTitle.textContent = "Error loading audio";
+        musicToggle.disabled = true;
+        musicToggle.style.opacity = "0.5";
+    });
+}
+
+// Toggle play/pause
+function toggleMusic() {
+    if (isPlaying) {
+        suolalaAudio.pause();
+        isPlaying = false;
+    } else {
+        suolalaAudio.play().then(() => {
+            isPlaying = true;
+        }).catch(e => {
+            console.log("Audio play failed:", e);
+            // Show user they need to interact first on some browsers
+            musicToggle.style.animation = 'shake 0.5s ease';
+            setTimeout(() => {
+                musicToggle.style.animation = '';
+            }, 500);
+            
+            // Try to play on next user interaction for browsers that require it
+            const playOnInteraction = () => {
+                suolalaAudio.play().then(() => {
+                    isPlaying = true;
+                    updateMusicButton();
+                }).catch(err => console.log("Still failed:", err));
+                document.removeEventListener('click', playOnInteraction);
+                document.removeEventListener('touchstart', playOnInteraction);
+            };
+            
+            document.addEventListener('click', playOnInteraction, { once: true });
+            document.addEventListener('touchstart', playOnInteraction, { once: true });
+        });
+    }
+    updateMusicButton();
+}
+
+function updateMusicButton() {
+    if (!musicIcon) return;
+    
+    if (isPlaying) {
+        musicIcon.className = 'fas fa-pause';
+        musicPlayer.classList.add('playing');
+    } else {
+        musicIcon.className = 'fas fa-play';
+        musicPlayer.classList.remove('playing');
+    }
+}
+
+// Add shake animation for audio play error
+const shakeStyle = document.createElement('style');
+shakeStyle.textContent = `
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+`;
+document.head.appendChild(shakeStyle);
+
+// Mobile-friendly: Initialize audio on first user interaction
+let audioInitialized = false;
+
+function initAudioOnInteraction() {
+    if (!audioInitialized && suolalaAudio) {
+        // Just ensure audio context is ready
+        console.log("Audio context initialized");
+        audioInitialized = true;
+        
+        // Try to load and play if user wants autoplay
+        suolalaAudio.load();
+    }
+}
+
 // Initialize everything when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     setupSmoothScrolling();
@@ -365,6 +493,42 @@ document.addEventListener('DOMContentLoaded', () => {
     createParticles();
     createFloatingShapes();
     
+    // Initialize music player
+    if (suolalaAudio && musicToggle && volumeSlider) {
+        initializeMusicPlayer();
+        
+        // Set up event listeners for music player
+        musicToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleMusic();
+        });
+        
+        // Volume control
+        volumeSlider.addEventListener('input', function() {
+            if (suolalaAudio) {
+                suolalaAudio.volume = this.value / 100;
+            }
+        });
+        
+        // Click on music player to toggle (except volume slider)
+        if (musicPlayer) {
+            musicPlayer.addEventListener('click', function(e) {
+                if (e.target !== volumeSlider && !volumeSlider.contains(e.target)) {
+                    toggleMusic();
+                }
+            });
+            
+            // Touch events for mobile
+            musicPlayer.addEventListener('touchstart', function(e) {
+                e.stopPropagation();
+            }, { passive: true });
+        }
+        
+        // Initialize audio on first user interaction
+        document.addEventListener('click', initAudioOnInteraction, { once: true });
+        document.addEventListener('touchstart', initAudioOnInteraction, { once: true });
+    }
+    
     // Start price updates
     setInterval(updateLivePrice, 3000);
     
@@ -373,6 +537,20 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Add animation classes
     document.body.classList.add('loaded');
+    
+    // Check if audio file exists
+    if (suolalaAudio) {
+        suolalaAudio.addEventListener('canplaythrough', () => {
+            console.log("SUOLALA song is ready to play");
+        });
+        
+        suolalaAudio.addEventListener('error', () => {
+            console.log("Make sure 'suolalasong.mp3' is in the same directory as your HTML file");
+            if (songTitle) {
+                songTitle.textContent = "Add suolalasong.mp3";
+            }
+        });
+    }
 });
 
 // Add CSS for theme toggle and particles
@@ -404,7 +582,7 @@ const themeToggleCSS = `
 
 @media (max-width: 768px) {
     .theme-toggle {
-        bottom: 20px;
+        bottom: 90px;
         right: 20px;
         width: 45px;
         height: 45px;
