@@ -82,10 +82,10 @@
                 <h1 class="hero-title build-rise">We Build, We Rise</h1>
                 <p class="hero-subtitle">The premier Chinese ticker on Solana, inspired by Lily Liu's tweet and born as an original IP that captures the resilient spirit of Solana builders.</p>
                 <div class="hero-buttons">
-                    <a href="#" class="btn btn-primary">
+                    <a href="https://dexscreener.com/solana/79Qaq5b1JfC8bFuXkAvXTR67fRPmMjMVNkEA3bb8bLzi" target="_blank" class="btn btn-primary">
                         <i class="fas fa-coins"></i> Buy $SUOLALA
                     </a>
-                    <a href="#" class="btn btn-secondary">
+                    <a href="https://dexscreener.com/solana/79Qaq5b1JfC8bFuXkAvXTR67fRPmMjMVNkEA3bb8bLzi" target="_blank" class="btn btn-secondary">
                         <i class="fas fa-chart-line"></i> View Chart
                     </a>
                 </div>
@@ -108,12 +108,12 @@
                 <div class="token-stat-card">
                     <div class="stat-header">
                         <h3>Live Price</h3>
-                        <div class="price-change positive">
-                            <i class="fas fa-arrow-up"></i>
-                            <span id="priceChange">+2.34%</span>
+                        <div id="priceChangeContainer" class="price-change">
+                            <i id="priceChangeIcon" class="fas"></i>
+                            <span id="priceChange">--%</span>
                         </div>
                     </div>
-                    <div class="stat-value" id="livePrice">$0.004567</div>
+                    <div class="stat-value" id="livePrice">$0.00</div>
                     <div class="stat-subtext">Per $SUOLALA</div>
                 </div>
                 
@@ -121,21 +121,24 @@
                     <div class="stat-header">
                         <h3>Market Cap</h3>
                     </div>
-                    <div class="stat-value">$12.4M</div>
+                    <div class="stat-value" id="marketCap">$0</div>
                     <div class="stat-subtext">Fully Diluted</div>
                 </div>
                 
                 <div class="token-stat-card">
                     <div class="stat-header">
-                        <h3>Holders</h3>
+                        <h3>Liquidity</h3>
                     </div>
-                    <div class="stat-value">8,452</div>
-                    <div class="stat-subtext">Unique Wallets</div>
+                    <div class="stat-value" id="liquidity">$0</div>
+                    <div class="stat-subtext">Total USD</div>
                 </div>
             </div>
             
-            <div class="chart-container">
-                <canvas id="priceChart"></canvas>
+            <div class="chart-container" style="height: 600px; padding: 0; overflow: hidden;">
+                <iframe 
+                    src="https://dexscreener.com/solana/79Qaq5b1JfC8bFuXkAvXTR67fRPmMjMVNkEA3bb8bLzi?embed=1&theme=dark&trades=0&info=0" 
+                    style="width: 100%; height: 100%; border: none;">
+                </iframe>
             </div>
         </div>
     </section>

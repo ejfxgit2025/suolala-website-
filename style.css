@@ -636,12 +636,20 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 600;
 }
 
+.price-change i {
+    font-size: 0.8rem;
+}
+
 .price-change.positive {
     color: var(--success);
 }
 
 .price-change.negative {
     color: var(--warning);
+}
+
+.chart-container iframe {
+    border-radius: 20px;
 }
 
 .stat-value {

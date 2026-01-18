@@ -72,32 +72,61 @@ function setupSmoothScrolling() {
     });
 }
 
-// Fake Live Price Updates
-let currentPrice = 0.004567;
-let priceChange = 2.34;
+// Token Data Fetching
+const TOKEN_ADDRESS = '79Qaq5b1JfC8bFuXkAvXTR67fRPmMjMVNkEA3bb8bLzi';
+const marketCapElement = document.getElementById('marketCap');
+const liquidityElement = document.getElementById('liquidity');
+const priceChangeContainer = document.getElementById('priceChangeContainer');
+const priceChangeIcon = document.getElementById('priceChangeIcon');
 
-function updateLivePrice() {
-    // Simulate small price fluctuations
-    const fluctuation = (Math.random() - 0.5) * 0.0005;
-    const newPrice = currentPrice + fluctuation;
-    
-    // Calculate percentage change
-    const changePercent = ((newPrice - currentPrice) / currentPrice) * 100;
-    
-    // Update current price with some resistance to prevent extreme swings
-    currentPrice = newPrice;
-    priceChange = changePercent;
-    
-    // Update UI
-    livePriceElement.textContent = `$${currentPrice.toFixed(6)}`;
-    
-    const isPositive = priceChange >= 0;
-    priceChangeElement.innerHTML = `<i class="fas fa-arrow-${isPositive ? 'up' : 'down'}"></i> ${Math.abs(priceChange).toFixed(2)}%`;
-    priceChangeElement.className = `price-change ${isPositive ? 'positive' : 'negative'}`;
-    
-    // Update chart
-    updateChartData();
+async function fetchTokenData() {
+    try {
+        const response = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${TOKEN_ADDRESS}`);
+        const data = await response.json();
+        
+        if (data.pairs && data.pairs.length > 0) {
+            const pair = data.pairs[0];
+            
+            // Update Price
+            const price = parseFloat(pair.priceUsd);
+            if (livePriceElement) {
+                livePriceElement.textContent = `$${price < 0.0001 ? price.toFixed(8) : price.toFixed(6)}`;
+            }
+            
+            // Update Price Change
+            if (pair.priceChange && pair.priceChange.h24 !== undefined) {
+                const change = parseFloat(pair.priceChange.h24);
+                const isPositive = change >= 0;
+                if (priceChangeElement) priceChangeElement.textContent = `${Math.abs(change).toFixed(2)}%`;
+                if (priceChangeContainer) priceChangeContainer.className = `price-change ${isPositive ? 'positive' : 'negative'}`;
+                if (priceChangeIcon) priceChangeIcon.className = `fas fa-arrow-${isPositive ? 'up' : 'down'}`;
+            }
+            
+            // Update Market Cap
+            const mcap = pair.fdv || pair.marketCap;
+            if (marketCapElement) marketCapElement.textContent = formatCurrency(mcap);
+            
+            // Update Liquidity
+            if (pair.liquidity && pair.liquidity.usd) {
+                const liq = pair.liquidity.usd;
+                if (liquidityElement) liquidityElement.textContent = formatCurrency(liq);
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching token data:', error);
+    }
 }
+
+function formatCurrency(value) {
+    if (!value) return '$0';
+    if (value >= 1000000) return `$${(value / 1000000).toFixed(2)}M`;
+    if (value >= 1000) return `$${(value / 1000).toFixed(2)}K`;
+    return `$${value.toFixed(2)}`;
+}
+
+// Initial fetch and interval
+fetchTokenData();
+setInterval(fetchTokenData, 10000);
 
 // Enhanced Background Animations
 function createParticles() {
@@ -168,132 +197,6 @@ function createFloatingShapes() {
         `;
         
         floatingShapes.appendChild(shape);
-    }
-}
-
-// Mini Chart Animation
-let chartCanvas, chartCtx, chartData, chart;
-
-function initializeChart() {
-    chartCanvas = document.getElementById('priceChart');
-    if (!chartCanvas) return;
-    
-    chartCtx = chartCanvas.getContext('2d');
-    
-    // Initial chart data
-    chartData = [];
-    let currentValue = 0.0045;
-    
-    for (let i = 0; i < 50; i++) {
-        currentValue += (Math.random() - 0.5) * 0.0001;
-        chartData.push(currentValue);
-    }
-    
-    // Create gradient
-    const gradient = chartCtx.createLinearGradient(0, 0, 0, chartCanvas.height);
-    gradient.addColorStop(0, 'rgba(153, 69, 255, 0.5)');
-    gradient.addColorStop(1, 'rgba(153, 69, 255, 0.1)');
-    
-    // Draw chart
-    chart = {
-        width: chartCanvas.width,
-        height: chartCanvas.height,
-        data: chartData,
-        
-        draw: function() {
-            // Clear canvas
-            chartCtx.clearRect(0, 0, this.width, this.height);
-            
-            // Calculate dimensions
-            const dataLength = this.data.length;
-            const step = this.width / (dataLength - 1);
-            const max = Math.max(...this.data);
-            const min = Math.min(...this.data);
-            const range = max - min;
-            const scale = this.height / range;
-            
-            // Draw gradient area
-            chartCtx.beginPath();
-            chartCtx.moveTo(0, this.height);
-            
-            for (let i = 0; i < dataLength; i++) {
-                const x = i * step;
-                const y = this.height - (this.data[i] - min) * scale;
-                
-                if (i === 0) {
-                    chartCtx.lineTo(x, y);
-                } else {
-                    chartCtx.lineTo(x, y);
-                }
-            }
-            
-            chartCtx.lineTo(this.width, this.height);
-            chartCtx.closePath();
-            
-            chartCtx.fillStyle = gradient;
-            chartCtx.fill();
-            
-            // Draw line
-            chartCtx.beginPath();
-            chartCtx.moveTo(0, this.height - (this.data[0] - min) * scale);
-            
-            for (let i = 1; i < dataLength; i++) {
-                const x = i * step;
-                const y = this.height - (this.data[i] - min) * scale;
-                chartCtx.lineTo(x, y);
-            }
-            
-            chartCtx.strokeStyle = '#9945FF';
-            chartCtx.lineWidth = 2;
-            chartCtx.stroke();
-            
-            // Draw current price point
-            const lastX = (dataLength - 1) * step;
-            const lastY = this.height - (this.data[dataLength - 1] - min) * scale;
-            
-            chartCtx.beginPath();
-            chartCtx.arc(lastX, lastY, 6, 0, Math.PI * 2);
-            chartCtx.fillStyle = '#14F195';
-            chartCtx.fill();
-            chartCtx.strokeStyle = '#FFFFFF';
-            chartCtx.lineWidth = 2;
-            chartCtx.stroke();
-        },
-        
-        update: function(newValue) {
-            // Shift data and add new value
-            this.data.shift();
-            this.data.push(newValue);
-            this.draw();
-        }
-    };
-    
-    // Initial draw
-    chart.draw();
-    
-    // Resize handler
-    window.addEventListener('resize', resizeChart);
-    resizeChart();
-}
-
-function updateChartData() {
-    if (chart) {
-        chart.update(currentPrice);
-    }
-}
-
-function resizeChart() {
-    if (!chartCanvas) return;
-    
-    // Get parent container dimensions
-    const container = chartCanvas.parentElement;
-    chartCanvas.width = container.clientWidth;
-    chartCanvas.height = container.clientHeight;
-    
-    if (chart) {
-        chart.width = chartCanvas.width;
-        chart.height = chartCanvas.height;
-        chart.draw();
     }
 }
 
@@ -522,7 +425,6 @@ function initAudioOnInteraction() {
 // Initialize everything when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     setupSmoothScrolling();
-    initializeChart();
     setupThemeToggle();
     setupScrollAnimations();
     
@@ -587,12 +489,6 @@ document.addEventListener('DOMContentLoaded', () => {
             slider: !!volumeSlider
         });
     }
-    
-    // Start price updates
-    setInterval(updateLivePrice, 3000);
-    
-    // Initialize with a random delay
-    setTimeout(updateLivePrice, 1000);
     
     // Add animation classes
     document.body.classList.add('loaded');
